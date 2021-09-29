@@ -1,0 +1,114 @@
+/* 8.3.1 (A) */
+
+DECLARE 
+   designacaoF genero_filme.designacaoF%type;
+   nomeFilmeG genero_filme.nomeFilmeG%type;
+   realizador Filme.id_realizador%type;
+   nomeAtor Ator.nome%type;
+   
+   CURSOR c_genero is 
+   select distinct nomeFilme, nomeEstudioF, ator.nome  from Filme
+   join genero_filme
+   on nomeFilme = nomeFilmeG
+   join atua
+   on nomeFilme = id_filme
+   join ator
+   on nr_id = id_ator
+   where designacaoF='Fantasia';
+    
+BEGIN 
+   OPEN c_genero;
+   dbms_output.put_line('|' || 'Genero' || '|' || 'Titulo_Filme' || '         |' || 'Ator' || '|'); 
+   dbms_output.put_line('' || '' || '' || '' || ''); 
+
+   LOOP
+   FETCH c_genero into designacaoF, nomeFilmeG, nomeAtor;
+      EXIT WHEN c_genero%notfound;
+      dbms_output.put_line('|' || designacaoF || '|' || nomeFilmeG || '|' || nomeAtor || '|');
+   END LOOP; 
+   CLOSE c_genero; 
+END;
+
+
+/* 8.3.1 (B) */
+
+
+
+DECLARE 
+   designacaoF genero_filme.designacaoF%type;
+   nomeFilmeG genero_filme.nomeFilmeG%type;
+   id_realizador Filme.id_realizador%type;
+   custo Filme.custo%type;
+   
+   CURSOR c_custo is 
+   select nomeFilmeG, designacaoF, custo, id_realizador
+   from genero_filme gf,filme f, realizador r
+   where gf.nomeFilmeG = f.nomeFilme
+   and r.nomeRealizador = f.id_realizador
+   and gf.designacaoF = 'Aventura'
+   order by f.custo desc
+   FETCH FIRST 1 ROWS ONLY;
+
+      
+       
+BEGIN 
+   OPEN c_custo;
+   dbms_output.put_line('|' || 'Genero' || '|' || 'Titulo_Filme' || '|' || 'Custo' || '|' || 'Realizador' || '|'); 
+   dbms_output.put_line('' || '' || '' || '' || ''); 
+
+   LOOP
+   FETCH c_custo into designacaoF, nomeFilmeG, custo, id_realizador;
+      EXIT WHEN c_custo%notfound;
+      dbms_output.put_line('|' || designacaoF || '|' || nomeFilmeG || '|' || custo || '|' || id_realizador || '|');
+   END LOOP; 
+   CLOSE c_custo; 
+END;
+
+
+
+/* 8.3.2 */
+
+
+create or replace trigger Filme_log
+before update of custo on Filme
+referencing new as new old as old
+for each row
+begin
+insert into Filme_log(nomeFilme, custo_anterior, custo_atual, data)
+values (:New.nomeFilme, :Old.custo, :New.custo, sysdate);
+end;
+
+
+
+/* 8.3.3 */
+
+
+begin
+update Filme set custo = 2345678 where nomeFilme = 'Joker';
+update Filme set custo = 3456787 where nomeFilme = 'Tall Girl';
+commit;
+
+declare
+cursor c_filme_log is
+select nomeFilme, custo_anterior, custo_atual, data
+from Filme_log;
+c_FilmeNome Filme_log.nomeFilme%type;
+c_CustoAnterior Filme_log.custo_anterior%type;
+c_CustoAtual Filme_log.custo_atual%type;
+c_data Filme_log.data%type;
+begin
+open c_filme_log;
+loop fetch c_filme_log into c_FilmeNome, c_CustoAnterior, c_CustoAtual, c_data;
+
+exit when c_filme_log%NOTFOUND;
+dbms_output.put_line('Dados inseridos em Filme_log: ');
+dbms_output.put_line('|' || 'Nome do Filme' || '|' || 'Custo Anterior' || '|' || 'Custo Atual' || '|' || 'Data de Ateração' || '|'); 
+
+dbms_output.put_line( c_FilmeNome	||	'        '	||	c_CustoAnterior	||	'        '	   ||	c_CustoAtual	||	'	      '	    ||	c_data);
+dbms_output.put_line('' || '' || '' || '' || ''); 
+end loop;
+end;
+end;
+
+
+
